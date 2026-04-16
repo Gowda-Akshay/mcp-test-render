@@ -104,6 +104,36 @@ function createMcpServer() {
     })
   );
 
+  server.registerTool(
+    "get_hardcoded_data",
+    {
+      title: "Get Hardcoded Data",
+      description: "Returns a fixed hardcoded payload for testing",
+      inputSchema: {},
+    },
+    async () => ({
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(
+            {
+              source: "demo-m2m-mcp",
+              status: "ok",
+              message: "This is hardcoded test data.",
+              items: [
+                { id: 1, name: "alpha" },
+                { id: 2, name: "beta" },
+                { id: 3, name: "gamma" },
+              ],
+            },
+            null,
+            2
+          ),
+        },
+      ],
+    })
+  );
+
   return server;
 }
 
