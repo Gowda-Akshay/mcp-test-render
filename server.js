@@ -62,7 +62,7 @@ app.get("/.well-known/oauth-protected-resource", (req, res) => {
   const dynamicBase = `${protocol}://${host}`;
   const baseUrl = process.env.PUBLIC_BASE_URL || dynamicBase;
   res.json({
-    resource: `${baseUrl}/mcp`,
+    resource: `${baseUrl}/health`,
     authorization_servers: [baseUrl],
   });
 });
@@ -107,7 +107,7 @@ function createMcpServer() {
   return server;
 }
 
-app.all("/mcp", requireBearerToken, async (req, res) => {
+async function handleMcp(req, res) {
   try {
     const server = createMcpServer();
     const transport = new StreamableHTTPServerTransport({
@@ -130,7 +130,12 @@ app.all("/mcp", requireBearerToken, async (req, res) => {
       });
     }
   }
-});
+}
+
+// Primary MCP endpoint
+app.all("/mcp", requireBearerToken, handleMcp);
+// Render fallback endpoint: POST /health for MCP, while GET /health stays health check
+app.post("/health", requireBearerToken, handleMcp);
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
