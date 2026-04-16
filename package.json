@@ -1,0 +1,18 @@
+{
+  "name": "mcp-render-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MCP Streamable HTTP server with simple bearer auth for Render",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.18.0",
+    "express": "^4.21.2",
+    "zod": "^3.24.1"
+  }
+}
