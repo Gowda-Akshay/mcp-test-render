@@ -69,7 +69,13 @@ app.post("/oauth/token", express.urlencoded({ extended: false }), (req, res) => 
     return res.status(401).json({ error: "invalid_client" });
   }
 
-  const requestedScopes = parseScopes(scope || REQUIRED_SCOPE);
+  const requestedScopes = parseScopes(scope);
+  if (requestedScopes.length === 0) {
+    return res.status(400).json({
+      error: "invalid_scope",
+      error_description: "Scope is required",
+    });
+  }
   if (!requestedScopes.includes(REQUIRED_SCOPE)) {
     return res.status(400).json({
       error: "invalid_scope",
