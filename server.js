@@ -1,4 +1,5 @@
 const express = require("express");
+const crypto = require("crypto");
 const { z } = require("zod");
 const { McpServer } = require("@modelcontextprotocol/sdk/server/mcp.js");
 const {
@@ -10,6 +11,20 @@ app.use(express.json());
 
 const PORT = Number(process.env.PORT || 3000);
 const VALID_BEARER_TOKEN = process.env.MCP_BEARER_TOKEN || "test-m2m-token";
+const REQUIRED_SCOPE = process.env.REQUIRED_SCOPE || "mcp:tools";
+const issuedTokenScopes = new Map();
+
+function parseScopes(scopeValue) {
+  return String(scopeValue || "")
+    .split(/\s+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+issuedTokenScopes.set(
+  VALID_BEARER_TOKEN,
+  new Set(parseScopes(process.env.MCP_BEARER_TOKEN_SCOPES || REQUIRED_SCOPE))
+);
 
 function requireBearerToken(req, res, next) {
   const auth = req.headers.authorization || "";
@@ -23,10 +38,17 @@ function requireBearerToken(req, res, next) {
   }
 
   const token = match[1].trim();
-  if (token !== VALID_BEARER_TOKEN) {
+  const scopes = issuedTokenScopes.get(token);
+  if (!scopes) {
     return res.status(401).json({
       error: "invalid_token",
       error_description: "Bad bearer token",
+    });
+  }
+  if (!scopes.has(REQUIRED_SCOPE)) {
+    return res.status(403).json({
+      error: "insufficient_scope",
+      error_description: `Token must include scope: ${REQUIRED_SCOPE}`,
     });
   }
 
@@ -47,11 +69,22 @@ app.post("/oauth/token", express.urlencoded({ extended: false }), (req, res) => 
     return res.status(401).json({ error: "invalid_client" });
   }
 
+  const requestedScopes = parseScopes(scope || REQUIRED_SCOPE);
+  if (!requestedScopes.includes(REQUIRED_SCOPE)) {
+    return res.status(400).json({
+      error: "invalid_scope",
+      error_description: `Requested scope must include: ${REQUIRED_SCOPE}`,
+    });
+  }
+
+  const accessToken = crypto.randomUUID();
+  issuedTokenScopes.set(accessToken, new Set(requestedScopes));
+
   return res.json({
-    access_token: VALID_BEARER_TOKEN,
+    access_token: accessToken,
     token_type: "Bearer",
     expires_in: 3600,
-    scope: scope || "mcp:tools",
+    scope: requestedScopes.join(" "),
   });
 });
 
