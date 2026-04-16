@@ -85,7 +85,7 @@ function createMcpServer() {
       inputSchema: {},
     },
     async () => ({
-      content: [{ type: "text", text: "pong" }],
+      content: [{ type: "text", text: "pong - MCP server is alive and responding." }],
     })
   );
 
