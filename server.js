@@ -55,8 +55,12 @@ app.post("/oauth/token", express.urlencoded({ extended: false }), (req, res) => 
   });
 });
 
-app.get("/.well-known/oauth-protected-resource", (_req, res) => {
-  const baseUrl = process.env.PUBLIC_BASE_URL || `http://localhost:${PORT}`;
+app.get("/.well-known/oauth-protected-resource", (req, res) => {
+  const forwardedProto = req.headers["x-forwarded-proto"];
+  const protocol = (typeof forwardedProto === "string" ? forwardedProto : req.protocol) || "http";
+  const host = req.get("host") || `localhost:${PORT}`;
+  const dynamicBase = `${protocol}://${host}`;
+  const baseUrl = process.env.PUBLIC_BASE_URL || dynamicBase;
   res.json({
     resource: `${baseUrl}/mcp`,
     authorization_servers: [baseUrl],
